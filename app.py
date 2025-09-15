@@ -9,13 +9,14 @@ import torch
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-# 初始化Ray，增加最大头部大小以处理大型模型
+# 初始化Ray，大幅增加最大头部大小以处理大型模型
 ray.init(
     ignore_reinit_error=True,
-    # num_cpus=4,
+    # num_cpus=4,  # 可根据实际需要取消注释并调整CPU数量
     runtime_env={
         "env_vars": {
-            "RAY_OBJECT_STORE_MAX_HEADER_SIZE": "10485760"  # 增加到10MB
+            "RAY_OBJECT_STORE_MAX_HEADER_SIZE": "52428800",  # 大幅增加到50MB
+            # "RAY_DISABLE_DASHBOARD": "1"  # 禁用Dashboard以减少资源占用
         }
     }
 )
@@ -47,7 +48,7 @@ def load_model_remote(model_path):
             model_path,
             trust_remote_code=True,
             device_map='cpu',
-            torch_dtype=torch.float16  # 使用float32以减少CPU内存使用
+            torch_dtype=torch.float16  # 使用float16以减少内存使用
         )
         
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
