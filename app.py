@@ -63,7 +63,7 @@ def load_model_remote(model_path):
 
 # 模型聊天函数
 @ray.remote
-def chat_with_model_remote(model, tokenizer, prompt, max_length=2048):
+def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
     try:
         # 使用tokenizer编码输入
         inputs = tokenizer(prompt, return_tensors="pt")
@@ -74,7 +74,7 @@ def chat_with_model_remote(model, tokenizer, prompt, max_length=2048):
             attention_mask=inputs["attention_mask"],
             max_length=max_length,
             num_return_sequences=1,
-            temperature=0.7,
+            temperature=0.5,
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
         )
