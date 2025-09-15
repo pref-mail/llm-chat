@@ -43,7 +43,7 @@ def load_model_remote(model_path):
             model_path,
             trust_remote_code=True,
             device_map='auto',  # 自动选择可用设备（优先GPU）
-            torch_dtype=torch.float16  # 使用float16以获得更好的GPU性能
+            dtype=torch.float16  # 使用float16以获得更好的GPU性能
         )
         
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -58,11 +58,11 @@ def load_model_remote(model_path):
 
 # 模型聊天函数
 @ray.remote
-def chat_with_model_remote(model, tokenizer, prompt, max_length=1024):
+def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
     try:
         # 使用tokenizer编码输入
         inputs = tokenizer(prompt, return_tensors="pt")
-        
+        print(f"输入张量形状: {inputs['input_ids'].shape}")
         # 将输入移动到GPU（如果可用）
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
