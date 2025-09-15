@@ -9,9 +9,16 @@ import torch
 app = Flask(__name__, template_folder='templates')
 CORS(app)
 
-# 初始化Ray ray.init(ignore_reinit_error=True, num_cpus=4)  # 设置CPU数量 没有启动的情况下
-
-ray.init(ignore_reinit_error=True)  # 设置CPU数量
+# 初始化Ray，增加最大头部大小以处理大型模型
+ray.init(
+    ignore_reinit_error=True,
+    # num_cpus=4,
+    runtime_env={
+        "env_vars": {
+            "RAY_OBJECT_STORE_MAX_HEADER_SIZE": "10485760"  # 增加到10MB
+        }
+    }
+)
 
 # 模型和tokenizer的全局变量
 model = None
