@@ -184,7 +184,7 @@ def chat():
     
     data = request.json
     prompt = data.get('prompt', '')
-    max_length = data.get('max_length', 100)
+    max_length = data.get('max_length', 1024)
     
     if not prompt:
         return jsonify({'error': '请输入提示内容'}), 400
