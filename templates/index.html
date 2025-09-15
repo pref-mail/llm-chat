@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoreGrid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        dark: '#1F2937',
+                        light: '#F9FAFB',
+                        accent: '#8B5CF6',
+                        darkBg: '#121212',
+                        darkCard: '#1E1E1E',
+                        darkSecondary: '#2D2D2D',
+                        darkText: '#E0E0E0',
+                        darkTextSecondary: '#A0A0A0',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-primary {
+                background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+            }
+            .bg-gradient-dark {
+                background: linear-gradient(135deg, #1E1E1E 0%, #2D2D2D 100%);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+            .transition-all-300 {
+                transition: all 300ms ease;
+            }
+            .dark-border {
+                border-color: #3D3D3D;
+            }
+            .dark-input {
+                background-color: #2D2D2D;
+                border-color: #3D3D3D;
+                color: #E0E0E0;
+            }
+            .dark-input:focus {
+                border-color: #3B82F6;
+                box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.5);
+            }
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-darkText min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <header class="bg-gradient-primary text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-rocket text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-shadow">CoreGrid</h1>
+            </div>
+            <div class="hidden md:flex space-x-4">
+                <button id="aboutBtn" class="px-3 py-1 rounded hover:bg-white/20 transition-all-300">
+                    <i class="fa fa-info-circle mr-1"></i>关于
+                </button>
+                <button id="settingsBtn" class="px-3 py-1 rounded hover:bg-white/20 transition-all-300">
+                    <i class="fa fa-cog mr-1"></i>设置
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容 -->
+    <main class="flex-1 container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 左侧面板：模型选择和训练 -->
+            <div class="lg:col-span-1">
+                <div class="bg-darkCard rounded-xl shadow-md p-5 h-full flex flex-col border dark-border">
+                    <h2 class="text-xl font-bold mb-4 flex items-center">
+                        <i class="fa fa-brain text-primary mr-2"></i>模型管理
+                    </h2>
+                    
+                    <!-- 模型选择 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3 text-darkTextSecondary">选择本地模型</h3>
+                        <div class="relative">
+                            <select id="modelSelect" class="w-full p-2 border dark-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300 appearance-none dark-input">
+                                <option value="">加载中...</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-darkTextSecondary">
+                                <i class="fa fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        <button id="loadModelBtn" class="w-full mt-3 bg-primary hover:bg-primary/90 text-white py-2 rounded-lg transition-all-300 flex items-center justify-center">
+                            <i class="fa fa-download mr-2"></i>加载模型
+                        </button>
+                    </div>
+
+                    <!-- 模型训练 -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold mb-3 text-darkTextSecondary">训练模型</h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-darkTextSecondary mb-1">数据路径</label>
+                                <input type="text" id="dataPath" placeholder="输入训练数据路径" class="w-full p-2 border dark-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300 dark-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-darkTextSecondary mb-1">模型保存路径</label>
+                                <input type="text" id="modelSavePath" placeholder="输入模型保存路径" class="w-full p-2 border dark-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300 dark-input">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-darkTextSecondary mb-1">训练轮数</label>
+                                <input type="number" id="epochs" value="3" min="1" max="20" class="w-full p-2 border dark-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300 dark-input">
+                            </div>
+                            <button id="trainBtn" class="w-full bg-secondary hover:bg-secondary/90 text-white py-2 rounded-lg transition-all-300 flex items-center justify-center">
+                                <i class="fa fa-cogs mr-2"></i>开始训练
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 系统状态 -->
+                    <div class="mt-auto">
+                        <h3 class="text-lg font-semibold mb-3 text-darkTextSecondary">系统状态</h3>
+                        <div class="p-3 bg-darkSecondary rounded-lg text-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span>模型状态：</span>
+                                <span id="modelStatus" class="text-red-500 font-medium"><i class="fa fa-circle-o-notch fa-spin mr-1"></i>未加载</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span>计算后端：</span>
+                            <span class="font-medium text-darkText">Ray (CPU模式)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧面板：聊天界面 -->
+            <div class="lg:col-span-2">
+                <div class="bg-darkCard rounded-xl shadow-md h-full flex flex-col border dark-border">
+                    <div class="p-5 border-b border-gray-200">
+                        <h2 class="text-xl font-bold flex items-center text-darkText">
+                            <i class="fa fa-comments text-accent mr-2"></i>聊天界面
+                        </h2>
+                    </div>
+                    
+                    <!-- 聊天历史 -->
+                    <div id="chatHistory" class="flex-1 p-5 overflow-y-auto space-y-4">
+                        <div class="flex items-center justify-center h-full">
+                            <div class="text-center text-darkTextSecondary">
+                                <i class="fa fa-comment-o text-4xl mb-3"></i>
+                                <p>请先加载模型开始聊天</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 聊天输入 -->
+                    <div class="p-5 border-t border-gray-200">
+                        <div class="relative">
+                            <textarea id="chatInput" rows="3" placeholder="输入您的问题..." class="w-full p-3 pr-12 border dark-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all-300 resize-none dark-input"></textarea>
+                            <button id="clearBtn" class="absolute right-3 top-3 text-darkTextSecondary hover:text-red-500 transition-all-300" title="清空">
+                                <i class="fa fa-times"></i>
+                            </button>
+                            <button id="sendBtn" class="absolute right-3 bottom-3 bg-primary hover:bg-primary/90 text-white p-2 rounded-lg transition-all-300" title="发送">
+                                <i class="fa fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-500 flex justify-between">
+                            <span class="text-darkTextSecondary">提示：按 Enter 发送，Shift+Enter 换行</span>
+                            <div>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" id="streamingCheckbox" class="rounded text-primary">
+                                    <span class="ml-1 text-darkTextSecondary">流式输出</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-darkSecondary text-darkText py-4">
+        <div class="container mx-auto px-4 text-center text-sm">
+        </div>
+    </footer>
+
+    <!-- 提示框 -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-darkSecondary text-darkText px-4 py-2 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center">
+        <i id="toastIcon" class="fa fa-info-circle mr-2"></i>
+        <span id="toastMessage">消息提示</span>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+        <div class="bg-darkCard rounded-xl shadow-lg max-w-md w-full mx-4 transform scale-95 opacity-0 transition-all duration-300 border dark-border" id="modalContent">
+            <div class="p-5 border-b dark-border">
+                <h3 class="text-xl font-bold text-darkText" id="modalTitle">模态框标题</h3>
+            </div>
+            <div class="p-5" id="modalBody">
+                <p>模态框内容</p>
+            </div>
+            <div class="p-5 border-t dark-border flex justify-end space-x-3">
+                <button id="modalCancelBtn" class="px-4 py-2 border dark-border rounded-lg hover:bg-darkSecondary transition-all-300 text-darkText">取消</button>
+                <button id="modalConfirmBtn" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all-300">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素
+        const modelSelect = document.getElementById('modelSelect');
+        const loadModelBtn = document.getElementById('loadModelBtn');
+        const dataPath = document.getElementById('dataPath');
+        const modelSavePath = document.getElementById('modelSavePath');
+        const epochs = document.getElementById('epochs');
+        const trainBtn = document.getElementById('trainBtn');
+        const modelStatus = document.getElementById('modelStatus');
+        const chatHistory = document.getElementById('chatHistory');
+        const chatInput = document.getElementById('chatInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const streamingCheckbox = document.getElementById('streamingCheckbox');
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+        const modal = document.getElementById('modal');
+        const modalContent = document.getElementById('modalContent');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+        const aboutBtn = document.getElementById('aboutBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+
+        // 显示提示框
+        function showToast(message, type = 'info') {
+            toastMessage.textContent = message;
+            
+            // 设置图标和颜色
+            if (type === 'success') {
+                toastIcon.className = 'fa fa-check-circle mr-2';
+                toast.classList.add('bg-green-600', 'text-white');
+            } else if (type === 'error') {
+                toastIcon.className = 'fa fa-exclamation-circle mr-2';
+                toast.classList.add('bg-red-600', 'text-white');
+            } else if (type === 'warning') {
+                toastIcon.className = 'fa fa-exclamation-triangle mr-2';
+                toast.classList.add('bg-yellow-500', 'text-white');
+            } else {
+                toastIcon.className = 'fa fa-info-circle mr-2';
+                toast.classList.add('bg-blue-600', 'text-white');
+            }
+            
+            // 显示提示框
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                // 清除颜色类
+                setTimeout(() => {
+                    toast.classList.remove('bg-green-600', 'bg-red-600', 'bg-blue-600', 'bg-yellow-500', 'text-white');
+                }, 300);
+            }, 3000);
+        }
+
+        // 显示模态框
+        function showModal(title, body, confirmCallback = null) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = body;
+            
+            // 显示模态框
+            modal.classList.remove('hidden');
+            // 触发过渡动画
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+            }, 10);
+            
+            // 设置确认按钮回调
+            if (confirmCallback) {
+                modalConfirmBtn.onclick = function() {
+                    confirmCallback();
+                    hideModal();
+                };
+            } else {
+                modalConfirmBtn.onclick = hideModal;
+            }
+        }
+
+        // 隐藏模态框
+        function hideModal() {
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // 添加聊天消息
+        function addChatMessage(role, content) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = `max-w-[80%] p-3 rounded-lg ${role === 'user' ? 'bg-primary text-white' : 'bg-darkSecondary text-darkText'}`;
+            
+            // 格式化内容（简单的换行处理）
+            const formattedContent = content.replace(/\n/g, '<br>');
+            messageContent.innerHTML = formattedContent;
+            
+            messageDiv.appendChild(messageContent);
+            chatHistory.appendChild(messageDiv);
+            
+            // 滚动到底部
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // 加载本地模型列表
+        function loadLocalModels() {
+            fetch('/api/models')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.models && data.models.length > 0) {
+                        modelSelect.innerHTML = '';
+                        data.models.forEach(model => {
+                            const option = document.createElement('option');
+                            option.value = model.path;
+                            option.textContent = model.name;
+                            modelSelect.appendChild(option);
+                        });
+                    } else {
+                        modelSelect.innerHTML = '<option value="">未找到本地模型</option>';
+                        showToast('未找到本地模型，请先将模型放置在local_llm_modes文件夹中', 'warning');
+                    }
+                })
+                .catch(error => {
+                    console.error('加载模型列表失败:', error);
+                    modelSelect.innerHTML = '<option value="">加载失败</option>';
+                    showToast('加载模型列表失败', 'error');
+                });
+        }
+
+        // 加载模型
+        function loadModel() {
+            const modelPath = modelSelect.value;
+            if (!modelPath) {
+                showToast('请选择模型', 'error');
+                return;
+            }
+            
+            modelStatus.innerHTML = '<i class="fa fa-circle-o-notch fa-spin mr-1"></i>加载中...';
+            loadModelBtn.disabled = true;
+            loadModelBtn.innerHTML = '<i class="fa fa-circle-o-notch fa-spin mr-2"></i>加载中...';
+            
+            fetch('/api/load_model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model_path: modelPath })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    modelStatus.innerHTML = '<i class="fa fa-check-circle mr-1"></i>已加载';
+                    modelStatus.className = 'text-green-500 font-medium';
+                    showToast('模型加载成功', 'success');
+                    
+                    // 清空聊天历史并显示欢迎信息
+                    chatHistory.innerHTML = '';
+                    addChatMessage('assistant', '您好！我是一个基于本地大模型的AI助手，请问有什么可以帮助您的？');
+                } else {
+                    modelStatus.innerHTML = '<i class="fa fa-times-circle mr-1"></i>加载失败';
+                    modelStatus.className = 'text-red-500 font-medium';
+                    showToast(data.error || '模型加载失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('加载模型失败:', error);
+                modelStatus.innerHTML = '<i class="fa fa-times-circle mr-1"></i>加载失败';
+                modelStatus.className = 'text-red-500 font-medium';
+                showToast('模型加载失败', 'error');
+            })
+            .finally(() => {
+                loadModelBtn.disabled = false;
+                loadModelBtn.innerHTML = '<i class="fa fa-download mr-2"></i>加载模型';
+            });
+        }
+
+        // 发送聊天消息
+        function sendChatMessage() {
+            const prompt = chatInput.value.trim();
+            if (!prompt) {
+                showToast('请输入消息内容', 'error');
+                return;
+            }
+            
+            // 添加用户消息
+            addChatMessage('user', prompt);
+            
+            // 清空输入框
+            chatInput.value = '';
+            
+            // 禁用发送按钮
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i>';
+            
+            // 发送请求
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ prompt: prompt })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    addChatMessage('assistant', data.response);
+                } else {
+                    addChatMessage('assistant', `发生错误: ${data.error || '未知错误'}`);
+                }
+            })
+            .catch(error => {
+                console.error('聊天请求失败:', error);
+                addChatMessage('assistant', '发送请求失败，请重试');
+            })
+            .finally(() => {
+                // 启用发送按钮
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fa fa-paper-plane"></i>';
+            });
+        }
+
+        // 训练模型
+        function trainModel() {
+            const dataPathValue = dataPath.value.trim();
+            const modelSavePathValue = modelSavePath.value.trim();
+            const epochsValue = parseInt(epochs.value);
+            
+            if (!dataPathValue) {
+                showToast('请输入数据路径', 'error');
+                return;
+            }
+            
+            if (!modelSavePathValue) {
+                showToast('请输入模型保存路径', 'error');
+                return;
+            }
+            
+            if (isNaN(epochsValue) || epochsValue < 1 || epochsValue > 20) {
+                showToast('请输入有效的训练轮数（1-20）', 'error');
+                return;
+            }
+            
+            // 确认训练
+            showModal(
+                '确认训练',
+                `确定要开始训练模型吗？<br><br>数据路径: ${dataPathValue}<br>模型保存路径: ${modelSavePathValue}<br>训练轮数: ${epochsValue}`,
+                () => {
+                    trainBtn.disabled = true;
+                    trainBtn.innerHTML = '<i class="fa fa-circle-o-notch fa-spin mr-2"></i>训练中...';
+                    
+                    fetch('/api/train', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            data_path: dataPathValue,
+                            model_save_path: modelSavePathValue,
+                            epochs: epochsValue
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('模型训练成功', 'success');
+                            // 重新加载模型列表
+                            loadLocalModels();
+                        } else {
+                            showToast(data.error || '模型训练失败', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('训练模型失败:', error);
+                        showToast('模型训练失败', 'error');
+                    })
+                    .finally(() => {
+                        trainBtn.disabled = false;
+                        trainBtn.innerHTML = '<i class="fa fa-cogs mr-2"></i>开始训练';
+                    });
+                }
+            );
+        }
+
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载本地模型列表
+            loadLocalModels();
+            
+            // 加载模型按钮
+            loadModelBtn.addEventListener('click', loadModel);
+            
+            // 训练模型按钮
+            trainBtn.addEventListener('click', trainModel);
+            
+            // 发送按钮
+            sendBtn.addEventListener('click', sendChatMessage);
+            
+            // 清空按钮
+            clearBtn.addEventListener('click', () => {
+                chatInput.value = '';
+                chatInput.focus();
+            });
+            
+            // 聊天输入框回车发送
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage();
+                }
+            });
+            
+            // 模态框取消按钮
+            modalCancelBtn.addEventListener('click', hideModal);
+            
+            // 点击模态框外部关闭
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    hideModal();
+                }
+            });
+            
+            // 关于按钮
+            aboutBtn?.addEventListener('click', () => {
+                showModal(
+                    '关于系统',
+                    `<p class="mb-3 text-darkText">CoreGrid是一个基于 Ray 的本地大模型聊天和训练平台。</p>
+                    <p class="mb-3 text-darkText">主要功能：</p>
+                    <ul class="list-disc pl-5 mb-3 space-y-1 text-darkText">
+                        <li>加载本地大模型</li>
+                        <li>与模型进行对话</li>
+                        <li>训练自定义模型</li>
+                    </ul>
+                    <p class="text-darkText">当前版本：1.0.0</p>`
+                );
+            });
+            
+            // 设置按钮
+            settingsBtn?.addEventListener('click', () => {
+                showModal(
+                    '系统设置',
+                    `<div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-darkTextSecondary mb-1">Ray CPU 数量</label>
+                            <input type="number" id="rayCpuCount" value="4" min="1" max="16" class="w-full p-2 border dark-border rounded-lg dark-input">
+                            <p class="text-xs text-darkTextSecondary mt-1">设置 Ray 可使用的 CPU 核心数量</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-darkTextSecondary mb-1">最大生成长度</label>
+                            <input type="number" id="maxGenLength" value="2048" min="512" max="8192" class="w-full p-2 border dark-border rounded-lg dark-input">
+                            <p class="text-xs text-darkTextSecondary mt-1">设置模型生成内容的最大长度</p>
+                        </div>
+                    </div>`,
+                    () => {
+                        // 这里可以保存设置
+                        showToast('设置已保存', 'success');
+                    }
+                );
+            });
+        });
+    </script>
+</body>
+</html>
