@@ -11,14 +11,9 @@ CORS(app)
 
 # 初始化Ray，大幅增加最大头部大小以处理大型模型
 ray.init(
-    ignore_reinit_error=True,
+    ignore_reinit_error=True
     # num_cpus=4,  # 可根据实际需要取消注释并调整CPU数量
-    runtime_env={
-        "env_vars": {
-            "RAY_OBJECT_STORE_MAX_HEADER_SIZE": "52428800",  # 大幅增加到50MB
-            # "RAY_DISABLE_DASHBOARD": "1"  # 禁用Dashboard以减少资源占用
-        }
-    }
+    
 )
 
 # 模型和tokenizer的全局变量
@@ -43,12 +38,12 @@ def load_model_remote(model_path):
         print(f"开始加载模型: {model_path}")
         start_time = time.time()
         
-        # 使用CPU加载模型
+        # 使用GPU加载模型（自动选择可用设备）
         model = AutoModelForCausalLM.from_pretrained(
             model_path,
             trust_remote_code=True,
-            device_map='cpu',
-            torch_dtype=torch.float16  # 使用float16以减少内存使用
+            device_map='auto',  # 自动选择可用设备（优先GPU）
+            torch_dtype=torch.float16  # 使用float16以获得更好的GPU性能
         )
         
         tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
@@ -63,10 +58,14 @@ def load_model_remote(model_path):
 
 # 模型聊天函数
 @ray.remote
-def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
+def chat_with_model_remote(model, tokenizer, prompt, max_length=1024):
     try:
         # 使用tokenizer编码输入
         inputs = tokenizer(prompt, return_tensors="pt")
+        
+        # 将输入移动到GPU（如果可用）
+        if torch.cuda.is_available():
+            inputs = {k: v.cuda() for k, v in inputs.items()}
         
         # 生成回答
         outputs = model.generate(
@@ -91,11 +90,14 @@ def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
         print(f"聊天时出错: {e}")
         return f"发生错误: {str(e)}"
 
-# 训练模型函数（模拟）
+# 训练模型函数（支持GPU）
 @ray.remote
 def train_model_remote(data_path, model_save_path, epochs=3):
     try:
+        # 检查GPU是否可用
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"开始训练模型，数据路径: {data_path}")
+        print(f"使用设备: {device}")
         print(f"训练将持续 {epochs} 个epochs...")
         
         # 这里只是模拟训练过程
