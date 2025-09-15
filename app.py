@@ -62,7 +62,7 @@ def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
     try:
         # 使用tokenizer编码输入
         inputs = tokenizer(prompt, return_tensors="pt")
-        print(f"输入张量形状: {inputs['input_ids'].shape}")
+        
         # 将输入移动到GPU（如果可用）
         if torch.cuda.is_available():
             inputs = {k: v.cuda() for k, v in inputs.items()}
@@ -184,7 +184,7 @@ def chat():
     
     data = request.json
     prompt = data.get('prompt', '')
-    max_length = data.get('max_length', 1024)
+    max_length = data.get('max_length', 100)
     
     if not prompt:
         return jsonify({'error': '请输入提示内容'}), 400
