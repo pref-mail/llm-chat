@@ -111,7 +111,7 @@ def train_gpt2_model(text_path, model_path, output_dir, epochs=10):
 if __name__ == "__main__":
     # 示例用法
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    text_path = os.path.join(base_dir, "example_data.txt")
+    text_path = os.path.join(base_dir, "example_training_data.txt")
     model_path = "/home/ubuntu/python_works/llm-chat/local_llm_modes/gpt2"
     output_dir = os.path.join(base_dir, "output")
     
