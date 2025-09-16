@@ -39,14 +39,17 @@ def load_model_remote(model_path):
         start_time = time.time()
         
         # 使用GPU加载模型（自动选择可用设备）
-        model = AutoModelForCausalLM.from_pretrained(
-            model_path,
-            trust_remote_code=True,
-            device_map='auto',  # 自动选择可用设备（优先GPU）
-            dtype=torch.float16  # 使用float16以获得更好的GPU性能
-        )
+        # model = AutoModelForCausalLM.from_pretrained(
+        #     model_path,
+        #     trust_remote_code=True,
+        #     device_map='auto',  # 自动选择可用设备（优先GPU）
+        #     dtype=torch.float16  # 使用float16以获得更好的GPU性能
+        # )
+
+        model = AutoModelForCausalLM.from_pretrained(model_path)
         
-        tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        # tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
         
         end_time = time.time()
         print(f"模型加载完成，耗时: {end_time - start_time:.2f}秒")
@@ -68,17 +71,31 @@ def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
             inputs = {k: v.cuda() for k, v in inputs.items()}
         
         # 生成回答
-        outputs = model.generate(
-            inputs["input_ids"],
-            attention_mask=inputs["attention_mask"],
-            max_length=max_length,
-            num_return_sequences=1,
-            temperature=0.5,
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id
-        )
+        # outputs = model.generate(
+        #     inputs["input_ids"],
+        #     attention_mask=inputs["attention_mask"],
+        #     max_length=max_length,
+        #     num_return_sequences=1,
+        #     temperature=0.5,
+        #     do_sample=True,
+        #     pad_token_id=tokenizer.eos_token_id
+        # )
         
-        # 解码输出
+        # # 解码输出
+        # response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+
+        inputs = tokenizer(prompt, return_tensors="pt")
+    
+            # 改进2：调整生成参数，增加多样性和生成长度
+        outputs = model.generate(
+                **inputs, 
+                max_new_tokens=100,  # 增加生成的文本长度
+                temperature=0.5,     # 略微增加随机性
+                do_sample=True,
+                top_k=50,            # 只考虑前50个可能性最高的词
+                top_p=0.95           # 核采样，增加多样性
+            )
         response = tokenizer.decode(outputs[0], skip_special_tokens=True)
         
         # 只返回生成的部分，不包括输入的提示
@@ -94,26 +111,36 @@ def chat_with_model_remote(model, tokenizer, prompt, max_length=100):
 @ray.remote
 def train_model_remote(data_path, model_save_path, epochs=3):
     try:
-        # 检查GPU是否可用
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"开始训练模型，数据路径: {data_path}")
-        print(f"使用设备: {device}")
-        print(f"训练将持续 {epochs} 个epochs...")
+        # 导入训练函数
+        import sys
+        import os
         
-        # 这里只是模拟训练过程
-        # 在实际应用中，你需要实现真实的训练逻辑
-        for epoch in range(epochs):
-            print(f"Epoch {epoch+1}/{epochs} 训练中...")
-            # 模拟训练进度
-            for i in range(10):
-                time.sleep(0.5)  # 模拟训练时间
-                progress = (i+1) * 10
-                print(f"  Epoch {epoch+1} 进度: {progress}%")
+        # 添加train目录到Python路径
+        train_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'train')
+        sys.path.append(train_dir)
         
-        print(f"模型训练完成，已保存至: {model_save_path}")
-        return "训练成功"
+        # 导入我们的训练函数
+        from ray_train_gpt2 import train_gpt2_model
+        
+        # 基础模型路径
+        base_model_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'local_llm_modes', 'gpt2')
+        
+        # 确保模型保存目录存在
+        os.makedirs(model_save_path, exist_ok=True)
+        
+        # 调用训练函数
+        result = train_gpt2_model(
+            text_path=data_path,
+            model_path=base_model_path,
+            output_dir=model_save_path,
+            epochs=epochs
+        )
+        
+        return result
     except Exception as e:
         print(f"训练时出错: {e}")
+        import traceback
+        traceback.print_exc()
         return f"训练失败: {str(e)}"
 
 # 获取本地模型列表
